@@ -17,12 +17,12 @@ def initialize_rag():
     loader = PyPDFDirectoryLoader("docs/")
     documents = loader.load()
 
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     chunks = splitter.split_documents(documents)
 
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     vectorstore = FAISS.from_documents(chunks, embeddings)
-    retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 4})
+    retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 6})
 
     llm = ChatGroq(
         model="llama-3.3-70b-versatile",
