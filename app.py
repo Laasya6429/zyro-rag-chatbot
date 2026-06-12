@@ -22,8 +22,14 @@ def initialize_rag():
 
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     vectorstore = FAISS.from_documents(chunks, embeddings)
-    retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 6})
-
+    retriever = vectorstore.as_retriever(
+    search_type="mmr",
+    search_kwargs={
+        "k": 6,
+        "fetch_k": 12,
+        "lambda_mult": 0.7
+    }
+)
     llm = ChatGroq(
         model="llama-3.3-70b-versatile",
         temperature=0.1,
