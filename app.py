@@ -62,13 +62,21 @@ def ask_bot(question):
     classification = oos_check.invoke({"question": question}).strip().upper()
 
     if "NO" in classification:
-        return REFUSAL_MESSAGE
+        return REFUSAL_MESSAGE, []
 
     docs = retriever.invoke(question)
     context = format_docs(docs)
     prompt = RAG_PROMPT.invoke({"context": context, "question": question})
     response = llm.invoke(prompt)
-    return StrOutputParser().invoke(response)
+    answer = StrOutputParser().invoke(response)
+
+    sources = list(set([
+        os.path.basename(doc.metadata.get("source", "Unknown"))
+        for doc in docs
+    ]))
+
+    return answer, sources
+
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -84,7 +92,13 @@ if prompt := st.chat_input("Ask an HR question..."):
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            response = ask_bot(prompt)
-        st.markdown(response)
+            answer, sources = ask_bot(prompt)
+        st.markdown(answer)
+        if sources:
+            st.caption("📄 Sources: " + " | ".join(sources))
 
-    st.session_state.messages.append({"role": "assistant", "content": response})
+    full_response = answer
+    if sources:
+        full_response += f"\n\n📄 *Sources: {' | '.join(sources)}*"
+
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
